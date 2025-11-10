@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Base Hearts Daily 💖</title>
+  <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; text-align: center; background: radial-gradient(circle at center, #f8faff, #d6e0ff); color: #222; padding: 40px; }
+    button { background:#5c6eff; color:white; border:none; border-radius:12px; padding:12px 24px; font-size:18px; cursor:pointer; margin-top:16px; transition:all .2s; }
+    button:hover { background:#4052f5; }
+    #status { margin-top:20px; font-size:14px; opacity:.8; }
+    #tot { font-weight:bold; font-size:20px; }
+  </style>
+</head>
+<body>
+  <h1>💖 Base Hearts Daily</h1>
+  <p>Send one heart per day on <b>Base</b> chain.</p>
+  <p>Total Hearts: <span id="tot">0</span></p>
+  <button id="connect">Connect Wallet</button>
+  <button id="likeBtn" disabled>Send Heart</button>
+  <div id="status"></div>
+
+  <script>
+    const CONTRACT_ADDRESS = "0x13aD0FD71d3d511663C53c52F7449E68c08c91D1";
+    const ABI = [
+      {"inputs":[],"name":"sendHeart","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[],"name":"totalHearts","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"heartsBy","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
+    ];
+
+    let provider, signer, contract;
+
+    async function connect() {
+      try {
+        if (!window.ethereum) { alert("Please install MetaMask or use Coinbase Wallet"); return; }
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        signer = provider.getSigner();
+        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+        document.getElementById("status").innerText = "✅ Connected";
+        document.getElementById("likeBtn").disabled = false;
+        updateHearts();
+      } catch (err) {
+        document.getElementById("status").innerText = "Connection failed: " + err.message;
+      }
+    }
+
+    async function sendHeart() {
+      try {
+        const tx = await contract.sendHeart();
+        document.getElementById("status").innerText = "Sending transaction...";
+        await tx.wait();
+        document.getElementById("status").innerText = "💖 Heart sent successfully!";
+        updateHearts();
+      } catch (err) {
+        document.getElementById("status").innerText = "Error: " + err.message;
+      }
+    }
+
+    async function updateHearts() {
+      try {
+        const total = await contract.totalHearts();
+        document.getElementById("tot").innerText = total.toString();
+      } catch (err) { console.error(err); }
+    }
+
+    document.getElementById("connect").onclick = connect;
+    document.getElementById("likeBtn").onclick = sendHeart;
+  </script>
+</body>
+</html>
